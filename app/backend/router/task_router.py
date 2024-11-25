@@ -54,14 +54,28 @@ async def get_task_by_id(task_id: int):
 @task_router.put("/api/task/{task_id}", response_model=TaskRead)
 async def update_task(task_id: int, task_data: TaskUpdate):
     try:
-        task_data.id = task_id
-        updated_task = await task.update(task_data)
-        if updated_task is None:
-            raise ValueError("Обновляемая задача - None")
+        existing_task = await task.get_by_id(task_id)
+        if not existing_task:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+        # Обновление поля completed
+        if task_data.completed is not None:
+            existing_task.completed = task_data.completed
+
+        # Обновление других полей
+        if task_data.name:
+            existing_task.name = task_data.name
+        if task_data.description:
+            existing_task.description = task_data.description
+        if task_data.datetime:
+            existing_task.datetime = task_data.datetime
+
+        updated_task = await task.update(existing_task)
         return updated_task
     except Exception as e:
         logger.error(f"Error updating task: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 @task_router.delete("/api/task/{task_id}", response_model=dict)
 async def delete_task(task_id: int):

@@ -7,6 +7,10 @@
     --green: #c9cba3;
 }
 
+html {
+    position: absolute;
+}
+
 body {
     font-family: "Montserrat", "Arial", sans-serif;
     box-sizing: border-box;
@@ -15,8 +19,9 @@ body {
     font-size: 16px;
     font-weight: 500;
     line-height: 1.5;
-    min-width: 670px;
+    min-width: 660px;
     position: relative;
+    height: 100%;
 }
 
 .container {
@@ -51,6 +56,12 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .wrapper {
+        grid-template-columns: 1fr;
+    }
 }
 
 .task {
@@ -141,6 +152,12 @@ body {
     gap: 20px;
 }
 
+@media (max-width: 768px) {
+    .task-list__body {
+        grid-template-columns: 1fr;
+    }
+}
+
 .task-list__item {
     background: var(--green);
     padding: 20px 10px;
@@ -149,10 +166,34 @@ body {
 
 .completed {
     background: rgb(104 225 104);
+    opacity: 0.8;
+}
+
+.lateness {
+    background: var(--orange);
 }
 
 .task-list__item h3 {
     font-size: 24px;
+}
+
+.task-list__header {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+}
+
+.task-item__delete {
+    height: 30px;
+    width: 30px;
+    border-radius: 50px;
+    font-size: 24px;
+    font-weight: 700;
+    background: #472d30;
+    color: var(--yellow);
+    position: absolute;
+    right: 0;
+    top: -10px;
 }
 
 .task-list__item-deadline {
@@ -170,7 +211,7 @@ body {
     background: var(--brown-light);
     color: var(--green);
     height: 50px;
-    position: absolute;
+    position: inherit;
     bottom: 0;
 }
 

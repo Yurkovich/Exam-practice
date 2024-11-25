@@ -20,8 +20,7 @@ class TaskCreate(BaseModel):
 
 
 class TaskUpdate(BaseModel):
-    id: int
-    name: str
-    description: str
-    datetime: str
-    completed: int
+    name: Optional[str] = None
+    description: Optional[str] = None
+    datetime: Optional[str] = None
+    completed: Optional[int] = None
