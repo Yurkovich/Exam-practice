@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link rel="stylesheet" href="../static/reset.css">
+    <link rel="stylesheet" href="../static/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+
+</head>
+
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header__wrapper">
+                <div class="header__title">TODO LOGO</div>
+                <div class="nav">
+                    <ul class="nav__list">
+                        <li class="nav__item">
+                            <a href="#" class="nav__link">Главная</a>
+                        </li>
+                        <li class="nav__item">
+                            <a href="#" class="nav__link">Telegram</a>
+                        </li>
+                        <li class="nav__item">
+                            <a href="#" class="nav__link">Telegram Bot</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="wrapper">
+                <section class="task">
+                    <div class="task__title">
+                        <h2>Добавить задачу</h2>
+                    </div>
+                    <div class="task__body">
+                        <div class="task__item task__name">
+                            <input type="text" class="task__input" id="add-name" placeholder="Название">
+                        </div>
+                        <div class="task__item task__description">
+                            <textarea class="task__textarea" id="add-description" placeholder="Описание"></textarea>
+                        </div>
+                        <div class="task__item task__deadline">
+                            <input class="task__datetime" type="datetime-local" id="add-datetime">
+                        </div>
+                        <button class="task__button" type="button" onclick="createTask()">Создать задачу</button>
+                    </div>
+                </section>
+
+                <section class="task">
+                    <div class="task__title">
+                        <h2>Изменить задачу</h2>
+                    </div>
+                    <div class="task__body">
+                        <div class="task__item task__name task__id">
+                            <input type="number" class="task__input" id="edit-id" placeholder="ID" oninput="loadTaskData()">
+                            <input type="text" class="task__input" id="edit-name" placeholder="Название">
+                        </div>
+                        <div class="task__item task__description">
+                            <textarea class="task__textarea" id="edit-description" placeholder="Описание"></textarea>
+                        </div>
+                        <div class="task__item task__deadline">
+                            <input class="task__datetime" type="datetime-local" id="edit-datetime">
+                        </div>
+                        <div class="button_wrapper">
+                            <button class="task__button task__button-edit" type="button" onclick="updateTask()">Изменить задачу</button>
+                            <button class="task__button task__button-complete" type="button" onclick="markTaskAsCompleted()">Выполнено</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <section class="task-list">
+                <div class="task-list__title">
+                    <h3>Список задач</h3>
+                </div>
+                <div class="task-list__body" id="task-list">
+                    <!-- Задачи будут добавляться сюда -->
+                </div>
+            </section>
+        </div>
+    </main>
+
+
+    <!-- <footer class="footer">
+        <div class="footer__inner">
+            <p>©️ Все права защищены.</p>
+        </div>
+    </footer> -->
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/task';
+    
+        async function createTask() {
+            const name = document.getElementById('add-name').value;
+            const description = document.getElementById('add-description').value;
+            const datetime = document.getElementById('add-datetime').value;
+    
+            const taskData = {
+                name,
+                description,
+                datetime,
+                completed: 0
+            };
+    
+            try {
+                const response = await fetch(API_BASE_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(taskData)
+                });
+    
+                if (response.ok) {
+                    const result = await response.json();
+                    alert('Задача успешно создана!');
+                    console.log(result);
+                    addTaskToList(result);
+                    await updateTaskList();
+                } else {
+                    const errorText = await response.text();
+                    alert('Ошибка при создании задачи: ' + errorText);
+                    console.error(errorText);
+                }
+            } catch (error) {
+                alert('Ошибка при выполнении запроса: ' + error.message);
+                console.error(error);
+            }
+        }
+    
+        async function loadTaskData() {
+            const id = document.getElementById('edit-id').value;
+            if (!id) {
+                alert('Не указан ID задачи для загрузки данных.');
+                return;
+            }
+    
+            try {
+                const response = await fetch(`${API_BASE_URL}/${id}`, { method: 'GET' });
+    
+                if (response.ok) {
+                    const task = await response.json();
+                    document.getElementById('edit-name').value = task.name;
+                    document.getElementById('edit-description').value = task.description;
+                    document.getElementById('edit-datetime').value = task.datetime.replace(' ', 'T');
+                } else {
+                    const errorText = await response.text();
+                    alert('Ошибка при загрузке данных задачи: ' + errorText);
+                    console.error(errorText);
+                }
+            } catch (error) {
+                alert('Ошибка при выполнении запроса: ' + error.message);
+                console.error(error);
+            }
+        }
+    
+        async function updateTask() {
+            const id = document.getElementById('edit-id').value;
+            if (!id) {
+                alert('Не указан ID задачи для обновления.');
+                return;
+            }
+    
+            const name = document.getElementById('edit-name').value;
+            const description = document.getElementById('edit-description').value;
+            const datetime = document.getElementById('edit-datetime').value;
+    
+            const taskData = { id, name, description, datetime, completed: 0 };
+    
+            try {
+                const response = await fetch(`${API_BASE_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(taskData)
+                });
+    
+                if (response.ok) {
+                    const result = await response.json();
+                    alert('Задача успешно обновлена!');
+                    console.log(result);
+                    await updateTaskList();
+                } else {
+                    const errorText = await response.text();
+                    alert('Ошибка при обновлении задачи: ' + errorText);
+                    console.error(errorText);
+                }
+            } catch (error) {
+                alert('Ошибка при выполнении запроса: ' + error.message);
+                console.error(error);
+            }
+        }
+    
+        async function markTaskAsCompleted() {
+            const id = document.getElementById('edit-id').value;
+            if (!id) {
+                alert('Не указан ID задачи для выполнения.');
+                return;
+            }
+    
+            const taskData = { completed: 1 };
+    
+            try {
+                const response = await fetch(`${API_BASE_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(taskData)
+                });
+    
+                if (response.ok) {
+                    const result = await response.json();
+                    alert('Задача успешно выполнена!');
+                    console.log(result);
+                    await updateTaskList();
+                } else {
+                    const errorText = await response.text();
+                    alert('Ошибка при выполнении задачи: ' + errorText);
+                    console.error(errorText);
+                }
+            } catch (error) {
+                alert('Ошибка при выполнении запроса: ' + error.message);
+                console.error(error);
+            }
+        }
+    
+        function addTaskToList(task) {
+            const taskList = document.getElementById('task-list');
+            const taskItem = document.createElement('div');
+            taskItem.className = 'task-list__item';
+    
+            const taskName = document.createElement('h3');
+            taskName.className = 'task-list__item-name';
+            taskName.textContent = task.name;
+    
+            const taskDesc = document.createElement('p');
+            taskDesc.className = 'task-list__item_desc';
+            taskDesc.textContent = task.description;
+    
+            const taskDeadline = document.createElement('div');
+            taskDeadline.className = 'task-list__item-deadline';
+            const deadlineText = document.createElement('p');
+            deadlineText.textContent = `Дедлайн: ${new Date(task.datetime).toLocaleString()}`;
+            taskDeadline.appendChild(deadlineText);
+    
+            taskItem.appendChild(taskName);
+            taskItem.appendChild(taskDesc);
+            taskItem.appendChild(document.createElement('br'));
+            taskItem.appendChild(taskDeadline);
+    
+            taskList.appendChild(taskItem);
+        }
+    
+        async function updateTaskList() {
+            try {
+                const response = await fetch(API_BASE_URL, { method: 'GET' });
+    
+                if (response.ok) {
+                    const tasks = await response.json();
+                    const taskList = document.getElementById('task-list');
+                    taskList.innerHTML = '';
+    
+                    tasks.forEach(task => {
+                        addTaskToList(task);
+                    });
+                } else {
+                    const errorText = await response.text();
+                    alert('Ошибка при получении списка задач: ' + errorText);
+                    console.error(errorText);
+                }
+            } catch (error) {
+                alert('Ошибка при выполнении запроса: ' + error.message);
+                console.error(error);
+            }
+        }
+    
+        window.onload = updateTaskList;
+    </script>
+    
+    
+    
+</body>
+
+</html>
