@@ -2,7 +2,6 @@
 from abc import ABC, abstractmethod
 import sqlite3
 from typing import Any, List
-
 from database.database import Database
 from model.task import TaskCreate, TaskRead, TaskUpdate
 

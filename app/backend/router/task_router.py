@@ -5,15 +5,15 @@ from database.database import Database
 from model.task import TaskCreate, TaskRead, TaskUpdate
 from model.model import Task
 import logging
-
 from bot.start_bot import notify_new_task, notify_task_deleted, notify_task_update
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
 db_manager = Database()
 task = Task(db_manager)
-
 task_router = APIRouter(tags=['Tasks'])
 
 

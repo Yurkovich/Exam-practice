@@ -10,7 +10,6 @@ class Database:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        # Создание таблицы для задач
         create_task_table_query = '''
         CREATE TABLE IF NOT EXISTS tasks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,4 +46,14 @@ class Database:
         users = cursor.fetchall()
         conn.close()
         return [user[0] for user in users]
+    
+    def get_tasks_from_db(self):
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT id, name, description, datetime, completed FROM tasks")
+        tasks = cursor.fetchall()
+
+        conn.close()
+        return [{"id": task[0], "name": task[1], "description": task[2], "datetime": task[3], "completed": bool(task[4])} for task in tasks]
         
