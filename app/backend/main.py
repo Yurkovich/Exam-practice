@@ -21,6 +21,7 @@ app.include_router(task_router)
 def start_bot():
     bot.infinity_polling()
 
+
 if __name__ == '__main__':
     db_manager = Database()
     db_manager.create_database()
