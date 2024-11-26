@@ -24,3 +24,4 @@ class TaskUpdate(BaseModel):
     description: Optional[str] = None
     datetime: Optional[str] = None
     completed: Optional[int] = None
+    

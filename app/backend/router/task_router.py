@@ -6,6 +6,8 @@ from model.task import TaskCreate, TaskRead, TaskUpdate
 from model.model import Task
 import logging
 
+from bot.start_bot import notify_new_task, notify_task_deleted, notify_task_update
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -21,6 +23,14 @@ async def create_task(task_data: TaskCreate):
         created_task = await task.add(task_data)
         if created_task is None:
             raise ValueError("Создание задачи - None")
+        
+        notify_new_task({
+            "id": created_task.id,
+            "name": created_task.name,
+            "datetime": created_task.datetime,
+            "description": created_task.description,
+        })
+        
         return created_task
     except Exception as e:
         logger.error(f"Error creating task: {e}")
@@ -57,20 +67,33 @@ async def update_task(task_id: int, task_data: TaskUpdate):
         existing_task = await task.get_by_id(task_id)
         if not existing_task:
             raise HTTPException(status_code=404, detail="Task not found")
-
-        # Обновление поля completed
-        if task_data.completed is not None:
+        
+        changes = []
+        if task_data.name and task_data.name != existing_task.name:
+            changes.append("name")
+            existing_task.name = task_data.name
+        if task_data.description and task_data.description != existing_task.description:
+            changes.append("description")
+            existing_task.description = task_data.description
+        if task_data.datetime and task_data.datetime != existing_task.datetime:
+            changes.append("datetime")
+            existing_task.datetime = task_data.datetime
+        if task_data.completed is not None and task_data.completed != existing_task.completed:
+            changes.append("completed")
             existing_task.completed = task_data.completed
 
-        # Обновление других полей
-        if task_data.name:
-            existing_task.name = task_data.name
-        if task_data.description:
-            existing_task.description = task_data.description
-        if task_data.datetime:
-            existing_task.datetime = task_data.datetime
-
         updated_task = await task.update(existing_task)
+        
+        if "completed" in changes and updated_task.completed:
+            notify_task_update({"id": updated_task.id, "name": updated_task.name}, "completed")
+        elif changes:
+            notify_task_update({
+                "id": updated_task.id,
+                "name": updated_task.name,
+                "datetime": updated_task.datetime,
+                "description": updated_task.description,
+            })
+        
         return updated_task
     except Exception as e:
         logger.error(f"Error updating task: {e}")
@@ -81,9 +104,12 @@ async def update_task(task_id: int, task_data: TaskUpdate):
 async def delete_task(task_id: int):
     try:
         result = await task.delete(task_id)
-        if not result:
-            raise HTTPException(status_code=404, detail="Task not found")
-        return {"message": "Задача успешно удалена!"}
+        
+        if result:
+            notify_task_deleted(task_id)
+            return {"message": "Задача успешно удалена!"}
+        else:
+            raise HTTPException(status_code=404, detail="Задача не найдена")
     except Exception as e:
         logger.error(f"Error deleting task: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")

@@ -26,10 +26,10 @@
                             <a href="http://127.0.0.1:8000/" class="nav__link">Главная</a>
                         </li>
                         <li class="nav__item">
-                            <a href="#" class="nav__link">Telegram</a>
+                            <a href="https://t.me/dnbdealer" class="nav__link">Telegram</a>
                         </li>
                         <li class="nav__item">
-                            <a href="#" class="nav__link">Telegram Bot</a>
+                            <a href="https://t.me/YurkovichBot" class="nav__link">Telegram Bot</a>
                         </li>
                     </ul>
                 </div>
@@ -102,6 +102,43 @@
 
     <script>
         const API_BASE_URL = 'http://127.0.0.1:8000/api/task';
+        const taskFields = ['edit-name', 'edit-description', 'edit-datetime'];
+
+        taskFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            field.addEventListener('input', handleTaskEdit);
+        });
+
+        async function handleTaskEdit() {
+            const idField = document.getElementById('edit-id');
+            const id = idField.value.trim();
+
+            if (!id) return;
+
+            const taskElement = document.querySelector(`.task-list__item[data-id="${id}"]`);
+            if (taskElement && taskElement.classList.contains('completed')) {
+                taskElement.classList.remove('completed');
+                await updateTaskStatus(id, 0);
+            }
+        }
+
+        async function updateTaskStatus(taskId, status) {
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/api/task/${taskId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ completed: status }),
+                });
+
+                if (!response.ok) {
+                    console.error('Не удалось обновить статус задачи');
+                }
+            } catch (error) {
+                console.error('Ошибка при обновлении статуса задачи:', error.message);
+            }
+        }
     
         async function createTask() {
             const name = document.getElementById('add-name').value;
@@ -140,28 +177,42 @@
         }
     
         async function loadTaskData() {
-            const id = document.getElementById('edit-id').value;
+            const idField = document.getElementById('edit-id');
+            const nameField = document.getElementById('edit-name');
+            const descriptionField = document.getElementById('edit-description');
+            const datetimeField = document.getElementById('edit-datetime');
+
+            const id = idField.value.trim();
+
             if (!id) {
-                alert('Не указан ID задачи для загрузки данных.');
+                nameField.value = '';
+                descriptionField.value = '';
+                datetimeField.value = '';
                 return;
             }
-    
+
             try {
-                const response = await fetch(`${API_BASE_URL}/${id}`, { method: 'GET' });
-    
+                const response = await fetch(`http://127.0.0.1:8000/api/task/${id}`, {
+                    method: 'GET',
+                });
+
                 if (response.ok) {
                     const task = await response.json();
-                    document.getElementById('edit-name').value = task.name;
-                    document.getElementById('edit-description').value = task.description;
-                    document.getElementById('edit-datetime').value = task.datetime.replace(' ', 'T');
+                    nameField.value = task.name || '';
+                    descriptionField.value = task.description || '';
+                    datetimeField.value = task.datetime.replace(' ', 'T') || '';
                 } else {
-                    const errorText = await response.text();
-                    alert('Ошибка при загрузке данных задачи: ' + errorText);
-                    console.error(errorText);
+                    idField.value = '';
+                    nameField.value = '';
+                    descriptionField.value = '';
+                    datetimeField.value = '';
                 }
             } catch (error) {
-                alert('Ошибка при выполнении запроса: ' + error.message);
-                console.error(error);
+                console.error('Ошибка при выполнении запроса:', error.message);
+                idField.value = '';
+                nameField.value = '';
+                descriptionField.value = '';
+                datetimeField.value = '';
             }
         }
     
@@ -225,7 +276,6 @@
                     alert('Задача успешно выполнена!');
                     console.log(result);
 
-                    // Добавляем класс completed к задаче
                     const taskItems = document.querySelectorAll('.task-list__item');
                     taskItems.forEach((taskItem) => {
                         const taskName = taskItem.querySelector('.task-list__item-name');
@@ -234,7 +284,6 @@
                         }
                     });
 
-                    // Обновляем список задач
                     await updateTaskList();
                 } else {
                     const errorText = await response.text();
@@ -267,7 +316,7 @@
 
             const deleteButton = document.createElement('button');
             deleteButton.className = 'task-item__delete';
-            deleteButton.textContent = '×'; // Символ крестика
+            deleteButton.textContent = '×';
             deleteButton.setAttribute('aria-label', 'Удалить задачу');
 
             deleteButton.addEventListener('click', async () => {
@@ -304,7 +353,7 @@
                 if (response.ok) {
                     const result = await response.json();
                     alert(result.message);
-                    taskElement.remove(); // Удаляем элемент задачи из DOM
+                    taskElement.remove();
                 } else {
                     const errorText = await response.text();
                     alert('Ошибка при удалении задачи: ' + errorText);
@@ -340,13 +389,8 @@
                 console.error(error);
             }
         }
-
-    
         window.onload = updateTaskList;
     </script>
-    
-    
-    
 </body>
 
 </html>
